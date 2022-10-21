@@ -1,4 +1,6 @@
-const token = "MTAzMjczNDA1NDkyMTAyNzY0OQ.G7cBla.zr4OrBZhFlax_0e-YtysXAZRHX7JBnwrnWdukE"; //Token that you saved in step 5 of this tutorial
+require("dotenv").config();
+
+const token = process.env.TOKEN_DISCORD; //Token that you saved in step 5 of this tutorial
 const {Client, GatewayIntentBits} = require("discord.js");
 const client = new Client({
     intents:[
