@@ -1,17 +1,17 @@
 require("dotenv").config();
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
+const Discord = require('discord.js');
 const token = process.env.TOKEN_DISCORD; //Token that you saved in step 5 of this tutorial
-const client = new Client({ 
+const client = new Discord.Client({ 
 	intents: [
-		GatewayIntentBits.Guilds,
-		GatewayIntentBits.MessageContent,
-		GatewayIntentBits.GuildMessageTyping,
-		GatewayIntentBits.GuildMessages
+		Discord.GatewayIntentBits.Guilds,
+		Discord.GatewayIntentBits.MessageContent,
+		Discord.GatewayIntentBits.GuildMessageTyping,
+		Discord.GatewayIntentBits.GuildMessages
 	] 
 });
-client.commands = new Collection();
+client.commands = new Discord.Collection();
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
@@ -19,25 +19,30 @@ const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('
 for (const file of commandFiles) {
 	const filePath = path.join(commandsPath, file);
 	const command = require(filePath);
-	client.commands.set(command.data.name, command);
+	const name = file.slice(0, -3)
+	client.commands.set(name, command);
 }
 
-client.once(Events.ClientReady, () => {
+client.once(Discord.Events.ClientReady, () => {
 	console.log('Ready!');
 });
 
-client.on(Events.InteractionCreate, async interaction => {
-	if (!interaction.isChatInputCommand()) return;
+client.on(Discord.Events.MessageCreate, async (message) => {
+	let prefix = process.env.PREFIX;
+	if(message.author.bot) return;
+	if(message.channel.type == "dm") return;
+	if(!message.content.toLowerCase().startsWith(prefix.toLowerCase())) return;
+	
+	const args = message.content.slice(prefix.length).trim().split(/ +/g);
 
-	const command = client.commands.get(interaction.commandName);
+	let cmd = args.shift().toLowerCase();
+	if(cmd.length === 0) return;
+	let command = client.commands.get(cmd);
 
-	if (!command) return;
-
-	try {
-		await command.execute(interaction);
-	} catch (error) {
-		console.error(error);
-		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+	try{
+		command.run(client, message, args)
+	}catch (err) {
+		console.error('Erro' + err);
 	}
 });
 
